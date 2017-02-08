@@ -6,7 +6,7 @@ https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldm
 
 
 Then click here.
-
+https://raw.githubusercontent.com/irfan4/championshipbot/master/championshipbot.js
 
 
 Make sure you disable other Slither.io plugins or extensions or scripts.
