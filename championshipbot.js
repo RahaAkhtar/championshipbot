@@ -27,7 +27,7 @@ window.log = function () {
 
 var nickname = "";
 var serverIP = "5.9.19.112:444";
-
+var repeater;
 var canvas = window.canvas = (function (window) {
     return {
         // Spoofs moving the mouse to the provided coordinates.
@@ -2249,6 +2249,9 @@ function loadAssets() {
                         type = 2;
                         var lastScore = window.document.getElementById('lastscore').innerText;
                         message = "was killed. " + lastScore.replace('Your final length was', 'Final Score:');
+                        window.clearInterval(repeater);
+                    } else {
+                        sendLocation();
                     }
 
                     writeRecord(nickname, window.force_ip + ":" + window.force_port, message, type);
@@ -2275,11 +2278,17 @@ function loadChat() {
     // Get a reference to the database service
     var database = firebase.database();
     var messagesRef = firebase.database().ref('messages/');
-
+    var locationsRef = firebase.database().ref('location/');
 
     messagesRef.on('child_added', function(data) {
         var item = data.val();
         appendChatItem(item.nick, item.message, item.timeStamp, item.server, item.type);
+    });
+
+    locationsRef.on('child_changed', function(data) {
+        var item = data.val();
+        console.log(item);
+        updateMap(item.nick, item.x, item.y);
     });
 }
 
@@ -2328,10 +2337,10 @@ function initializeUI() {
     divFrame.appendChild(divPanel);
 
     document.getElementById("login").appendChild(divFrame);
-    
+
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
-    
+
     document.body.appendChild(divFloatingdivcontainer);
 }
 
@@ -2369,6 +2378,25 @@ function writeRecord(nick, server, message, type) {
     // Write the new post's data simultaneously in the posts list and the user's post list.
     var updates = {};
     updates['/messages/' + newPostKey] = postData;
+
+    return firebase.database().ref().update(updates);
+}
+
+function writeLocation(nick, x, y, score) {
+    // A post entry.
+    var postData = {
+        nick: nick,
+        x: x,
+        y: y,
+        score: score
+    };
+
+    // Get a key for a new Post.
+    var newPostKey = nick;
+
+    // Write the new post's data simultaneously in the posts list and the user's post list.
+    var updates = {};
+    updates['/location/' + newPostKey] = postData;
 
     return firebase.database().ref().update(updates);
 }
@@ -2414,6 +2442,8 @@ function appendChatItem(name, message, timestamp, ip, type) {
     if (window.snake != null) {
         showNotification(name +": " + message, type);
     }
+
+    playSound(type);
 }
 
 function timeSince(date) {
@@ -2466,5 +2496,59 @@ function hideNotification() {
         if (notificationContainer.length > 0) {
             notificationContainer[0].removeChild(notification);
         }
+    }
+}
+
+function playSound(type) {
+    var audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Interfaces/Beeps/Fat_n_So-wwwbeat-8519/Fat_n_So-wwwbeat-8519_hifi.mp3";
+    if (type == 2) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Mayhem/Knife_Sword/Knife_SL-Derka_De-8768/Knife_SL-Derka_De-8768_hifi.mp3";
+    } else if (type == 3) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Interfaces/Clicks/Button_C-J_Fairba-8446/Button_C-J_Fairba-8446_hifi.mp3";
+    }
+
+    var audio = new Audio(audioURL);
+    audio.play();
+}
+
+function sendLocation() {
+    if (window.snake != null && nickname.length != 0) {
+        var x = window.snake.xx;
+        var y = window.snake.yy;
+
+        writeLocation(nickname, x, y, bot.snakeLength);
+
+        repeater = setTimeout(sendLocation, 1000);
+    } else {
+        window.clearInterval(repeater);
+    }
+}
+
+var mapDiv = null;
+
+function updateMap(nickname, x, y) {
+    if (mapDiv === null) {
+        var nsidivs = document.querySelectorAll('div.nsi');
+        for (var i = 0; i < nsidivs.length; i++) {
+            if (nsidivs[i].style.zIndex === 10 && nsidivs[i].style.width === '104px') {
+                mapDiv = nsidivs[i];
+                break;
+            }
+        }
+    }
+
+    if (mapDiv === null) {
+        var img = mapDiv.getElementById(nickname);
+        if (img == null) {
+            img = document.createElement("img");
+            mapDiv.appendChild(img);
+        }
+
+        img.style.position = "absolute";
+        img.style.left = x / 500;
+        img.style.top = y / 500;
+        img.style.opacity = 0.8;
+        img.style.zIndex = 13;
+        img.style.translate
     }
 }
