@@ -1921,7 +1921,7 @@ var userInterface = window.userInterface = (function (window, document) {
                 if (e.keyCode === 70) {
                     toggleFullScreen();
                 }
-                
+
                 if (e.keyCode === 67) {
                     window.high_quality = !window.high_quality;
                 }
@@ -2251,10 +2251,12 @@ function loadAssets() {
                 if (isStatusWritten % 2 == 0) {
                     var type = 1;
                     var message = "respawned.";
+                    console.log(target.style.display);
                     if (target.style.display === 'inline') {
                         type = 2;
                         var lastScore = window.document.getElementById('lastscore').innerText;
                         message = "was killed. " + lastScore.replace('Your final length was', 'Final Score:');
+                        writeLocation(nickname, 0, 0, 0, true);
                         window.clearInterval(repeater);
                     } else {
                         sendLocation();
@@ -2290,12 +2292,32 @@ function loadChat() {
         var item = data.val();
         appendChatItem(item.nick, item.message, item.timeStamp, item.server, item.type);
     });
-    
+
     locationsRef.on('child_changed', function(data) {
         var item = data.val();
         if (item.nick != nickname) {
             updateMap(item.nick, item.x, item.y);
         }
+    });
+
+    locationsRef.on('child_removed', function(data) {
+        var item = data.val();
+        console.log(item);
+        if (mapDiv == null) {
+            var nsidivs = document.getElementsByClassName("nsi");
+            for (var i = 0; i < nsidivs.length; i++) {
+                if (nsidivs[i].style.zIndex == 10) {
+                    mapDiv = nsidivs[i];
+                    break;
+                }
+            }
+        }
+
+        var img = document.getElementById(item.nick);
+        if (img != null && mapDiv != null) {
+            mapDiv.removeChild(img);
+        }
+
     });
 }
 
@@ -2344,10 +2366,10 @@ function initializeUI() {
     divFrame.appendChild(divPanel);
 
     document.getElementById("login").appendChild(divFrame);
-    
+
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
-    
+
     document.body.appendChild(divFloatingdivcontainer);
 }
 
@@ -2357,8 +2379,6 @@ function sendChatMessage() {
     if (t.value.length === 0) {
         return;
     }
-
-    console.log(t.value);
 
     if (nickname.length === 0) {
         var nick = document.getElementById("nick");
@@ -2389,7 +2409,7 @@ function writeRecord(nick, server, message, type) {
     return firebase.database().ref().update(updates);
 }
 
-function writeLocation(nick, x, y, score) {
+function writeLocation(nick, x, y, score, isRemove) {
     // A post entry.
     var postData = {
         nick: nick,
@@ -2403,7 +2423,11 @@ function writeLocation(nick, x, y, score) {
 
     // Write the new post's data simultaneously in the posts list and the user's post list.
     var updates = {};
-    updates['/location/' + newPostKey] = postData;
+    if (isRemove) {
+        updates['/location/' + newPostKey] = null;
+    } else {
+        updates['/location/' + newPostKey] = postData;
+    }
 
     return firebase.database().ref().update(updates);
 }
@@ -2450,7 +2474,7 @@ function appendChatItem(name, message, timestamp, ip, type) {
         showNotification(name +": " + message, type);
         playSound(type);
     }
-    
+
 }
 
 function timeSince(date) {
@@ -2495,7 +2519,7 @@ function showNotification(message, type) {
 
 function hideNotification() {
     var notifications = document.getElementsByClassName("floatingdiv");
-    console.log(notifications);
+
     if (notifications.length > 0) {
         var notification = notifications[0];
 
@@ -2515,7 +2539,7 @@ function playSound(type) {
     } else if (type == 4) {
         audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/People/Applause/Dull_Cla-Public_D-11/Dull_Cla-Public_D-11_hifi.mp3";
     }
-    
+
     var audio = new Audio(audioURL);
     audio.play();
 }
@@ -2524,9 +2548,9 @@ function sendLocation() {
     if (window.snake != null && nickname.length != 0) {
         var x = window.snake.xx;
         var y = window.snake.yy;
-        
-        writeLocation(nickname, x, y, bot.snakeLength);
-        
+
+        writeLocation(nickname, x, y, bot.snakeLength, false);
+
         repeater = setTimeout(sendLocation, 1000);
     } else {
         window.clearInterval(repeater);
@@ -2547,17 +2571,16 @@ function updateMap(nickname, x, y) {
     }
     //console.log(nickname + ": " + x + "," + y);
     if (mapDiv !== null) {
-        console.log("found div");
         var img = document.getElementById(nickname);
         if (img == null) {
             img = document.createElement("img");
             mapDiv.appendChild(img);
         }
-        
+
         img.style.position = "absolute";
-        img.style.left = x / 500;
-        img.style.top = y / 500;
-        img.style.opacity = 0.8;
+        img.style.left = x / 476.1;
+        img.style.top = y / 476.1;
+        img.style.opacity = 1;
         img.style.zIndex = 13;
         img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAKpJREFUKBVjYBgygBmHSw2A4uFA7AHEH4H4BRATBBsElAT+OxU6/Pdu8PwPYgN1zEfXxYgmYABUeL76cDlc+Mfn7/97vSYxfrj3wRAoeAEmwQRjQOkAowCQKxGAg5eTESrmgBBlYEDXyMDFz4Usj5ONrnHDkYXHUBT/+PyD4dwGsAsPoEhg4UACp8jhv0+jFyxwFqCrQw8cmDzIow5ALADEG4AYbCWQHooAAPTfK2eTXSbGAAAAAElFTkSuQmCC";
         img.alt = nickname;
