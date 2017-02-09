@@ -2287,8 +2287,9 @@ function loadChat() {
 
     locationsRef.on('child_changed', function(data) {
         var item = data.val();
-        console.log(item);
-        updateMap(item.nick, item.x, item.y);
+        if (item.nick != nickname) {
+            updateMap(item.nick, item.x, item.y);
+        }
     });
 }
 
@@ -2441,9 +2442,9 @@ function appendChatItem(name, message, timestamp, ip, type) {
 
     if (window.snake != null) {
         showNotification(name +": " + message, type);
+        playSound(type);
     }
 
-    playSound(type);
 }
 
 function timeSince(date) {
@@ -2527,18 +2528,19 @@ function sendLocation() {
 var mapDiv = null;
 
 function updateMap(nickname, x, y) {
-    if (mapDiv === null) {
-        var nsidivs = document.querySelectorAll('div.nsi');
+    if (mapDiv == null) {
+        var nsidivs = document.getElementsByClassName("nsi");
         for (var i = 0; i < nsidivs.length; i++) {
-            if (nsidivs[i].style.zIndex === 10 && nsidivs[i].style.width === '104px') {
+            if (nsidivs[i].style.zIndex == 10) {
                 mapDiv = nsidivs[i];
                 break;
             }
         }
     }
-
-    if (mapDiv === null) {
-        var img = mapDiv.getElementById(nickname);
+    //console.log(nickname + ": " + x + "," + y);
+    if (mapDiv !== null) {
+        console.log("found div");
+        var img = document.getElementById(nickname);
         if (img == null) {
             img = document.createElement("img");
             mapDiv.appendChild(img);
@@ -2549,6 +2551,8 @@ function updateMap(nickname, x, y) {
         img.style.top = y / 500;
         img.style.opacity = 0.8;
         img.style.zIndex = 13;
-        img.style.translate
+        img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAKpJREFUKBVjYBgygBmHSw2A4uFA7AHEH4H4BRATBBsElAT+OxU6/Pdu8PwPYgN1zEfXxYgmYABUeL76cDlc+Mfn7/97vSYxfrj3wRAoeAEmwQRjQOkAowCQKxGAg5eTESrmgBBlYEDXyMDFz4Usj5ONrnHDkYXHUBT/+PyD4dwGsAsPoEhg4UACp8jhv0+jFyxwFqCrQw8cmDzIow5ALADEG4AYbCWQHooAAPTfK2eTXSbGAAAAAElFTkSuQmCC";
+        img.alt = nickname;
+        img.id = nickname;
     }
 }
