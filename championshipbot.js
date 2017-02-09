@@ -1921,6 +1921,10 @@ var userInterface = window.userInterface = (function (window, document) {
                 if (e.keyCode === 70) {
                     toggleFullScreen();
                 }
+                
+                if (e.keyCode === 67) {
+                    window.high_quality = !window.high_quality;
+                }
 
                 if (e.keyCode === 88) {
                     nextSkin();
@@ -2004,7 +2008,9 @@ var userInterface = window.userInterface = (function (window, document) {
             oContent.push('[A/S] radius multiplier: ' + bot.opt.radiusMult);
             oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
             oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
-            oContent.push('[U] log debugging: ' + ht(window.logDebugging));
+            oContent.push('[F] Fullscreen');
+            oContent.push('[X] Change Skin');
+            oContent.push('[C] Change Quality');
             oContent.push('[Mouse Wheel] zoom');
             oContent.push('[Z] reset zoom');
             oContent.push('[ESC] quick respawn');
@@ -2284,7 +2290,7 @@ function loadChat() {
         var item = data.val();
         appendChatItem(item.nick, item.message, item.timeStamp, item.server, item.type);
     });
-
+    
     locationsRef.on('child_changed', function(data) {
         var item = data.val();
         if (item.nick != nickname) {
@@ -2338,10 +2344,10 @@ function initializeUI() {
     divFrame.appendChild(divPanel);
 
     document.getElementById("login").appendChild(divFrame);
-
+    
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
-
+    
     document.body.appendChild(divFloatingdivcontainer);
 }
 
@@ -2444,7 +2450,7 @@ function appendChatItem(name, message, timestamp, ip, type) {
         showNotification(name +": " + message, type);
         playSound(type);
     }
-
+    
 }
 
 function timeSince(date) {
@@ -2506,8 +2512,10 @@ function playSound(type) {
         audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Mayhem/Knife_Sword/Knife_SL-Derka_De-8768/Knife_SL-Derka_De-8768_hifi.mp3";
     } else if (type == 3) {
         audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Interfaces/Clicks/Button_C-J_Fairba-8446/Button_C-J_Fairba-8446_hifi.mp3";
+    } else if (type == 4) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/People/Applause/Dull_Cla-Public_D-11/Dull_Cla-Public_D-11_hifi.mp3";
     }
-
+    
     var audio = new Audio(audioURL);
     audio.play();
 }
@@ -2516,9 +2524,9 @@ function sendLocation() {
     if (window.snake != null && nickname.length != 0) {
         var x = window.snake.xx;
         var y = window.snake.yy;
-
+        
         writeLocation(nickname, x, y, bot.snakeLength);
-
+        
         repeater = setTimeout(sendLocation, 1000);
     } else {
         window.clearInterval(repeater);
@@ -2545,7 +2553,7 @@ function updateMap(nickname, x, y) {
             img = document.createElement("img");
             mapDiv.appendChild(img);
         }
-
+        
         img.style.position = "absolute";
         img.style.left = x / 500;
         img.style.top = y / 500;
