@@ -2266,6 +2266,7 @@ function loadAssets() {
                         writeLocation(nickname, 0, 0, 0, true);
                         window.clearInterval(repeater);
                     } else {
+                        sosActive = false;
                         sendLocation();
                     }
                 }
@@ -2327,6 +2328,13 @@ function loadChat() {
         if (img != null && mapDiv != null) {
             mapDiv.removeChild(img);
         }
+        
+        var _scoreNameDiv = document.getElementById("score_name_" + nick);
+        var _scoreDiv =  document.getElementById("score_" + nick);
+        var friendsLeaderboard = document.getElementById('friendsLeaderboard');
+
+        friendsLeaderboard.removeChild(_scoreDiv);
+        friendsLeaderboard.removeChild(_scoreNameDiv);
 
     });
 }
@@ -2568,8 +2576,11 @@ function sendLocation() {
     if (window.snake != null && nickname.length != 0) {
         var x = window.snake.xx;
         var y = window.snake.yy;
+        
+        var snakeLength = Math.floor(15 * (window.fpsls[window.snake.sct] + window.snake.fam /
+                                               window.fmlts[window.snake.sct] - 1) - 5);
 
-        writeLocation(nickname, x, y, bot.snakeLength, false);
+        writeLocation(nickname, x, y, snakeLength, false);
 
         repeater = setTimeout(sendLocation, 2000);
     } else {
