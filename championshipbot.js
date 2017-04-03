@@ -1,22 +1,14 @@
-/*
-The MIT License (MIT)
- Copyright (c) 2016 Jesse Miller <jmiller@jmiller.com>
- Copyright (c) 2016 Alexey Korepanov <kaikaikai@yandex.ru>
- Copyright (c) 2016 Ermiya Eskandary & Théophile Cailliau and other contributors
- https://jmiller.mit-license.org/
-*/
 // ==UserScript==
-// @name         Slither.io Bot Championship Edition
-// @namespace    https://github.com/j-c-m/Slither.io-bot
-// @version      3.0.5
-// @description  Slither.io Bot Championship Edition
-// @author       Jesse Miller
+// @name         Mine Modified Script
+// @namespace    http://tampermonkey.net/
+// @version      0.2
+// @description  try to take over the world!
+// @author       You
 // @match        http://slither.io/
-// @updateURL    https://github.com/j-c-m/Slither.io-bot/raw/master/bot.user.js
-// @downloadURL  https://github.com/j-c-m/Slither.io-bot/raw/master/bot.user.js
-// @supportURL   https://github.com/j-c-m/Slither.io-bot/issues
 // @grant        none
 // ==/UserScript==
+
+
 
 // Custom logging function - disabled by default
 window.log = function () {
@@ -26,10 +18,11 @@ window.log = function () {
 };
 
 var nickname = "";
-var serverIP = "5.9.19.112:444";
+var serverIP = "";
 var repeater;
+var locationRepeater;
 var sosActive = false;
-
+var sendMyLocation = true;
 var canvas = window.canvas = (function (window) {
     return {
         // Spoofs moving the mouse to the provided coordinates.
@@ -404,7 +397,7 @@ var canvas = window.canvas = (function (window) {
 var bot = window.bot = (function (window) {
     return {
         isBotRunning: false,
-        isBotEnabled: true,
+        isBotEnabled: false,
         stage: 'grow',
         collisionPoints: [],
         collisionAngles: [],
@@ -443,7 +436,10 @@ var bot = window.bot = (function (window) {
             // snake score to start circling on self
             followCircleLength: 5000,
             // direction for followCircle: +1 for counter clockwise and -1 for clockwise
-            followCircleDirection: +1
+            followCircleDirection: -1,
+			//Time to update the location on the map
+			locationUpdateTimer : 8000
+			
         },
         MID_X: 0,
         MID_Y: 0,
@@ -757,9 +753,7 @@ var bot = window.bot = (function (window) {
                             canvas.getDistance2FromSnake(collisionPoint);
                             bot.addCollisionAngle(collisionPoint);
 
-                            if (collisionPoint.distance <= Math.pow(
-                                (bot.headCircle.radius)
-                                + collisionPoint.radius, 2)) {
+                            if (collisionPoint.distance <= Math.pow((bot.headCircle.radius) + collisionPoint.radius, 2)) {
                                 bot.collisionPoints.push(collisionPoint);
                                 if (window.visualDebugging) {
                                     canvas.drawCircle(canvas.circle(
@@ -1092,7 +1086,7 @@ var bot = window.bot = (function (window) {
             let t2 = bot.pts[min_n].len - bot.pts[next_n].len;
             t2 *= t2;
 
-            if (t2 == 0) {
+            if (t2 === 0) {
                 return bot.pts[min_n].len;
             } else {
                 let min_w = t2 - (min_d2 - next_d2);
@@ -1238,8 +1232,7 @@ var bot = window.bot = (function (window) {
             var enemyBodyOffsetDelta = 0.25 * bot.snakeWidth;
             var enemyHeadDist2 = 64 * 64 * bot.snakeWidth * bot.snakeWidth;
             for (let snake = 0, snakesNum = window.snakes.length; snake < snakesNum; snake++) {
-                if (window.snakes[snake].id !== window.snake.id
-                    && window.snakes[snake].alive_amt === 1) {
+                if (window.snakes[snake].id !== window.snake.id && window.snakes[snake].alive_amt === 1) {
                     let enemyHead = {
                         x: window.snakes[snake].xx + window.snakes[snake].fx,
                         y: window.snakes[snake].yy + window.snakes[snake].fy
@@ -1273,8 +1266,7 @@ var bot = window.bot = (function (window) {
                                 y: window.snakes[snake].pts[pts].yy +
                                 window.snakes[snake].pts[pts].fy
                             };
-                            while (!offsetSet || (enemyBodyOffsetDelta >= -bot.snakeWidth
-                                                  && canvas.pointInPoly(point, cpolbody))) {
+                            while (!offsetSet || (enemyBodyOffsetDelta >= -bot.snakeWidth && canvas.pointInPoly(point, cpolbody))) {
                                 if (!offsetSet) {
                                     offsetSet = true;
                                 } else {
@@ -1405,9 +1397,7 @@ var bot = window.bot = (function (window) {
             };
 
 
-            if (window.goalCoordinates
-                && Math.abs(goal.x - window.goalCoordinates.x) < 1000
-                && Math.abs(goal.y - window.goalCoordinates.y) < 1000) {
+            if (window.goalCoordinates && Math.abs(goal.x - window.goalCoordinates.x) < 1000 && Math.abs(goal.y - window.goalCoordinates.y) < 1000) {
                 window.goalCoordinates = {
                     x: Math.round(goal.x * 0.25 + window.goalCoordinates.x * 0.75),
                     y: Math.round(goal.y * 0.25 + window.goalCoordinates.y * 0.75)
@@ -1475,13 +1465,11 @@ var bot = window.bot = (function (window) {
 
                 if (
                     bot.collisionAngles[aIndex] && bot.collisionAngles[aIndex].distance >
-                    bot.currentFood.distance + bot.snakeRadius * bot.opt.radiusMult
-                    && bot.currentFood.da < bot.opt.foodAccelDa) {
+                    bot.currentFood.distance + bot.snakeRadius * bot.opt.radiusMult && bot.currentFood.da < bot.opt.foodAccelDa) {
                     return 1;
                 }
 
-                if (bot.collisionAngles[aIndex] === undefined
-                    && bot.currentFood.da < bot.opt.foodAccelDa) {
+                if (bot.collisionAngles[aIndex] === undefined && bot.currentFood.da < bot.opt.foodAccelDa) {
                     return 1;
                 }
             }
@@ -1713,7 +1701,7 @@ var userInterface = window.userInterface = (function (window, document) {
             var statsOverlay = document.createElement('div');
             statsOverlay.style.position = 'fixed';
             statsOverlay.style.left = '10px';
-            statsOverlay.style.top = '295px';
+            statsOverlay.style.top = '390px';
             statsOverlay.style.width = '140px';
             statsOverlay.style.height = '210px';
             // statsOverlay.style.background = 'rgba(0, 0, 0, 0.5)';
@@ -1814,6 +1802,8 @@ var userInterface = window.userInterface = (function (window, document) {
                 if (s.length === 2) {
                     window.force_ip = s[0];
                     window.force_port = s[1];
+                    window.high_quality = false;
+                    window.want_quality = 0;
                     bot.connect();
                 }
             } else {
@@ -1860,6 +1850,8 @@ var userInterface = window.userInterface = (function (window, document) {
                 // Letter `T` to toggle bot
                 if (e.keyCode === 84) {
                     bot.isBotEnabled = !bot.isBotEnabled;
+                    window.high_quality = false;
+                    window.want_quality = 0;
                 }
                 // Letter 'U' to toggle debugging (console)
                 if (e.keyCode === 85) {
@@ -1879,8 +1871,8 @@ var userInterface = window.userInterface = (function (window, document) {
                     console.log('Automatic Respawning set to: ' + window.autoRespawn);
                     userInterface.savePreference('autoRespawn', window.autoRespawn);
                 }
-                // Letter 'H' to toggle hidden mode
-                if (e.keyCode === 72) {
+                // Letter 'M' to toggle hidden mode
+                if (e.keyCode === 77) {
                     userInterface.toggleOverlays();
                 }
                 // Letter 'G' to toggle graphics
@@ -1920,21 +1912,55 @@ var userInterface = window.userInterface = (function (window, document) {
                     bot.quickRespawn();
                 }
 
+				// Letter 'F' to full screen
                 if (e.keyCode === 70) {
                     toggleFullScreen();
                 }
 
+				// Letter 'C' for change of quality
                 if (e.keyCode === 67) {
                     window.high_quality = !window.high_quality;
-                }
-                
-                if (e.keyCode === 68) {
-                    sosActive = !sosActive;
+                    window.want_quality = 0;
                 }
 
+				//Letter 'D' for Emergency
+                if (e.keyCode === 68) {
+                    sosActive = !sosActive;
+					sendMyLocation = true;
+                    sendLocation();
+                }
+				
+				//Letter 'E' for Send my location
+				if (e.keyCode === 69) {
+					sendMyLocation = !sendMyLocation;
+					sosActive = false;
+					sendLocation();
+				}
+
+				//Letter 'Z' for next skin
                 if (e.keyCode === 88) {
                     nextSkin();
                 }
+				
+				//Letter 'J' for location updates
+                if (e.keyCode === 74) {
+                    bot.opt.locationUpdateTimer = bot.opt.locationUpdateTimer + 1000;
+					sendLocation();
+                    console.log(
+                        'Update Timer set to: ' + bot.opt.locationUpdateTimer);
+                }
+                // Letter 'H' to decrease collision detection radius
+                if (e.keyCode === 72) {
+                    if (bot.opt.locationUpdateTimer > 1000) {
+                        bot.opt.locationUpdateTimer = bot.opt.locationUpdateTimer - 1000;
+						sendLocation();
+                        console.log(
+                        'Update Timer set to: ' + bot.opt.locationUpdateTimer);
+                    }
+                }
+				
+				
+				
                 userInterface.onPrefChange();
             }
         },
@@ -2016,9 +2042,13 @@ var userInterface = window.userInterface = (function (window, document) {
             oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
             oContent.push('[F] Fullscreen');
             oContent.push('[X] Change Skin');
-            oContent.push('[C] Change Quality');
+            oContent.push('[C] Change Quality: ' + ht(window.want_quality));
             oContent.push('[D] SOS Active: ' + ht(sosActive));
-            oContent.push('[Mouse Wheel] zoom');
+			oContent.push('[E] Send My Location: ' + ht(sendMyLocation));
+//            oContent.push('[Mouse Wheel] zoom');
+			oContent.push('[J] Longer Time update: ' + bot.opt.locationUpdateTimer);
+            oContent.push('[H] Update Quickly: ' + bot.opt.locationUpdateTimer);
+			
             oContent.push('[Z] reset zoom');
             oContent.push('[ESC] quick respawn');
             oContent.push('[Q] quit to menu');
@@ -2148,7 +2178,7 @@ var userInterface = window.userInterface = (function (window, document) {
     window.addEventListener('mouseup', userInterface.onmouseup);
 
     // Hide top score
-    userInterface.hideTop();
+    //userInterface.hideTop();
 
     // force server
     userInterface.initServerIp();
@@ -2169,7 +2199,6 @@ var userInterface = window.userInterface = (function (window, document) {
     userInterface.loadPreference('mobileRender', false);
     window.nick.value = userInterface.loadPreference('savedNick', 'Slither.IO');
     nickname = window.nick.value;
-    serverIP = "5.9.19.112:444";
 
     // Listener for mouse wheel scroll - used for setZoom function
     document.body.addEventListener('mousewheel', canvas.setZoom);
@@ -2197,22 +2226,22 @@ var userInterface = window.userInterface = (function (window, document) {
 
 function toggleFullScreen() {
     if ((document.fullScreenElement && document.fullScreenElement !== null) || (!document.mozFullScreen && !document.webkitIsFullScreen)) {
-        if (document.documentElement.requestFullScreen) {  
-            document.documentElement.requestFullScreen();  
-        } else if (document.documentElement.mozRequestFullScreen) {  
-            document.documentElement.mozRequestFullScreen();  
-        } else if (document.documentElement.webkitRequestFullScreen) {  
-            document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
-        }  
-    } else {  
-        if (document.cancelFullScreen) {  
-            document.cancelFullScreen();  
-        } else if (document.mozCancelFullScreen) {  
-            document.mozCancelFullScreen();  
-        } else if (document.webkitCancelFullScreen) {  
-            document.webkitCancelFullScreen();  
-        }  
-    }  
+        if (document.documentElement.requestFullScreen) {
+            document.documentElement.requestFullScreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullScreen) {
+            document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    } else {
+        if (document.cancelFullScreen) {
+            document.cancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+        }
+    }
 }
 
 var skinIndex = 0;
@@ -2226,14 +2255,13 @@ function nextSkin() {
 
 function addCss(fileName) {
 
-    var head = document.head
-    , link = document.createElement('link')
+    var head = document.head , link = document.createElement('link');
 
-    link.type = 'text/css'
-    link.rel = 'stylesheet'
-    link.href = fileName
+    link.type = 'text/css';
+    link.rel = 'stylesheet';
+    link.href = fileName;
 
-    head.appendChild(link)
+    head.appendChild(link);
 }
 
 function loadAssets() {
@@ -2243,7 +2271,7 @@ function loadAssets() {
     js.src = "https://www.gstatic.com/firebasejs/3.6.9/firebase.js";
 
     document.body.appendChild(js);
-    addCss('https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/style.css?alt=media&token=425d64e7-af05-4e79-87cd-5d969a172209')
+    addCss('https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/style.css?alt=media&token=425d64e7-af05-4e79-87cd-5d969a172209');
 
     initializeUI();
 
@@ -2255,23 +2283,25 @@ function loadAssets() {
             var target = document.getElementById('login');
             if (target.style.opacity == 1) {
                 isStatusWritten++;
-                if (isStatusWritten % 2 == 0) {
+                if (isStatusWritten % 2 === 0) {
                     var type = 1;
                     var message = "respawned.";
-                    console.log(target.style.display);
                     if (target.style.display === 'inline') {
                         type = 2;
                         var lastScore = window.document.getElementById('lastscore').innerText;
                         message = "was killed. " + lastScore.replace('Your final length was', 'Final Score:');
                         writeLocation(nickname, 0, 0, 0, true);
                         window.clearInterval(repeater);
+						window.clearInterval(locationRepeater);
                     } else {
                         sosActive = false;
                         sendLocation();
                     }
+
+                    //                    writeRecord(nickname, window.force_ip + ":" + window.force_port, message, type);
                 }
             }
-        });    
+        });
     });
 
     var target = document.getElementById('login');
@@ -2308,13 +2338,14 @@ function loadChat() {
             }
             updateMap(item.nick, item.x, item.y, isSOS);
             updateScore(item.nick, item.score);
+
         }
     });
 
     locationsRef.on('child_removed', function(data) {
         var item = data.val();
         console.log(item);
-        if (mapDiv == null) {
+        if (mapDiv === null) {
             var nsidivs = document.getElementsByClassName("nsi");
             for (var i = 0; i < nsidivs.length; i++) {
                 if (nsidivs[i].style.zIndex == 10) {
@@ -2325,17 +2356,16 @@ function loadChat() {
         }
 
         var img = document.getElementById(item.nick);
-        if (img != null && mapDiv != null) {
-            mapDiv.removeChild(img);
+        if (img !== null && mapDiv !== null) {
+            mapDiv.parentNode.removeChild(img);
         }
-        
+
         var _scoreNameDiv = document.getElementById("score_name_" + nick);
         var _scoreDiv =  document.getElementById("score_" + nick);
         var friendsLeaderboard = document.getElementById('friendsLeaderboard');
 
-        friendsLeaderboard.removeChild(_scoreDiv);
-        friendsLeaderboard.removeChild(_scoreNameDiv);
-
+        friendsLeaderboard.parentNode.removeChild(_scoreDiv);
+        friendsLeaderboard.parentNode.removeChild(_scoreNameDiv);
     });
 }
 
@@ -2378,7 +2408,7 @@ function initializeUI() {
     divChatHistory.className = "notifications clearfix";
     divChatHistory.innerHTML = "<div class=\"line\"></div>";
 
-    divPanel.appendChild(divChatHistory);
+//     divPanel.appendChild(divChatHistory);
 
 
     divFrame.appendChild(divPanel);
@@ -2389,11 +2419,11 @@ function initializeUI() {
     divFloatingdivcontainer.className = "floatingdivcontainer";
 
     document.body.appendChild(divFloatingdivcontainer);
-    
+
     var divFriendsLeaderboard = document.createElement("div");
     divFriendsLeaderboard.id = "friendsLeaderboard";
     divFriendsLeaderboard.className = "friendsLeaderboard";
-    
+
     document.body.appendChild(divFriendsLeaderboard);
 }
 
@@ -2403,6 +2433,8 @@ function sendChatMessage() {
     if (t.value.length === 0) {
         return;
     }
+
+    console.log(t.value);
 
     if (nickname.length === 0) {
         var nick = document.getElementById("nick");
@@ -2496,11 +2528,11 @@ function appendChatItem(name, message, timestamp, ip, type) {
     //div.innerHTML = "" + name + ": " + message + " (" + timestamp + ")";
 
     document.getElementById("chat_history").appendChild(div);
-    document.getElementById("chat_history").scrollTop = document.getElementById("chat_history").scrollHeight
+    document.getElementById("chat_history").scrollTop = document.getElementById("chat_history").scrollHeight;
 
-    if (window.snake != null) {
-        showNotification(name +": " + message, type);
-        playSound(type);
+    if (window.snake !== null) {
+        //        showNotification(name +": " + message, type);
+        //        playSound(type);
     }
 
 }
@@ -2541,19 +2573,19 @@ function showNotification(message, type) {
     var notificationContainer = document.getElementsByClassName("floatingdivcontainer");
     if (notificationContainer.length > 0) {
         notificationContainer[0].appendChild(div);
-        setTimeout(hideNotification, 5000);
+        setTimeout(hideNotification, 2000);
     }
 }
 
 function hideNotification() {
     var notifications = document.getElementsByClassName("floatingdiv");
-
+    console.log(notifications);
     if (notifications.length > 0) {
         var notification = notifications[0];
 
         var notificationContainer = document.getElementsByClassName("floatingdivcontainer");
         if (notificationContainer.length > 0) {
-            notificationContainer[0].removeChild(notification);
+            notificationContainer[0].parentNode.removeChild(notification);
         }
     }
 }
@@ -2568,42 +2600,48 @@ function playSound(type) {
         audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/People/Applause/Dull_Cla-Public_D-11/Dull_Cla-Public_D-11_hifi.mp3";
     }
 
-    var audio = new Audio(audioURL);
-    audio.play();
+    //    var audio = new Audio(audioURL);
+    //    audio.play();
 }
 
 function sendLocation() {
-    if (window.snake != null && nickname.length != 0) {
+	if (!sendMyLocation) {
+		return;
+	}
+
+    if (window.snake !== null && nickname.length !== 0) {
         var x = window.snake.xx;
         var y = window.snake.yy;
-        
+
         var snakeLength = Math.floor(15 * (window.fpsls[window.snake.sct] + window.snake.fam /
-                                               window.fmlts[window.snake.sct] - 1) - 5);
+                                           window.fmlts[window.snake.sct] - 1) - 5);
+        ;
+		
 
-        writeLocation(nickname, x, y, snakeLength, false);
-
-        repeater = setTimeout(sendLocation, 2000);
+		console.info(bot.opt.locationUpdateTimer+" In Send location")
+        repeater = setTimeout(sendLocation, bot.opt.locationUpdateTimer);
+		locationRepeater = setTimeout(writeLocation(nickname, x, y, snakeLength, false),bot.opt.locationUpdateTimer);
     } else {
         window.clearInterval(repeater);
+		window.clearInterval(locationRepeater);
     }
 }
 
 var mapDiv = null;
-
 function updateScore(nick, score) {
-    
+
     var friendsLeaderboard = document.getElementById('friendsLeaderboard');
     var _scoreNameDiv = document.getElementById("score_name_" + nick);
     var _scoreDiv =  document.getElementById("score_" + nick);
 
-    if (_scoreDiv == null) {
+    if (_scoreDiv === null) {
         _scoreDiv = document.createElement("div");
         _scoreDiv.className = "scoreDiv";
         _scoreDiv.id = "score_" + nick;
         friendsLeaderboard.appendChild(_scoreDiv);
     }
 
-    if (_scoreNameDiv == null) {
+    if (_scoreNameDiv === null) {
         _scoreNameDiv = document.createElement("div");
         _scoreNameDiv.className = "scoreNameDiv";
         _scoreNameDiv.id = "score_name_" + nick;
@@ -2614,7 +2652,7 @@ function updateScore(nick, score) {
     _scoreNameDiv.innerHTML = nick;
 }
 function updateMap(nickname, x, y, isSOS) {
-    if (mapDiv == null) {
+    if (mapDiv === null) {
         var nsidivs = document.getElementsByClassName("nsi");
         for (var i = 0; i < nsidivs.length; i++) {
             if (nsidivs[i].style.zIndex == 10) {
@@ -2625,23 +2663,52 @@ function updateMap(nickname, x, y, isSOS) {
     }
     //console.log(nickname + ": " + x + "," + y);
     if (mapDiv !== null) {
+//        console.log("found div");
         var img = document.getElementById(nickname);
-        if (img == null) {
+        if (img === null) {
             img = document.createElement("img");
             mapDiv.appendChild(img);
         }
-
         img.style.position = "absolute";
         img.style.left = x / 476.1;
         img.style.top = y / 476.1;
         img.style.opacity = 1;
         img.style.zIndex = 13;
         if (isSOS) {
-            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAAsTAAALEwEAmpwYAAA4WWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS41LWMwMjEgNzkuMTU1NzcyLCAyMDE0LzAxLzEzLTE5OjQ0OjAwICAgICAgICAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgICAgICAgICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIj4KICAgICAgICAgPHhtcDpDcmVhdGVEYXRlPjIwMTctMDItMTFUMjA6MjY6NTQrMDQ6MDA8L3htcDpDcmVhdGVEYXRlPgogICAgICAgICA8eG1wOk1vZGlmeURhdGU+MjAxNy0wMi0xMVQyMDoyODowNyswNDowMDwveG1wOk1vZGlmeURhdGU+CiAgICAgICAgIDx4bXA6TWV0YWRhdGFEYXRlPjIwMTctMDItMTFUMjA6Mjg6MDcrMDQ6MDA8L3htcDpNZXRhZGF0YURhdGU+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCk8L3htcDpDcmVhdG9yVG9vbD4KICAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9wbmc8L2RjOmZvcm1hdD4KICAgICAgICAgPHBob3Rvc2hvcDpDb2xvck1vZGU+MzwvcGhvdG9zaG9wOkNvbG9yTW9kZT4KICAgICAgICAgPHhtcE1NOkluc3RhbmNlSUQ+eG1wLmlpZDozNDgzYzU2MS1kODc2LTQyODMtYmRjOC1kYTBiZTk5ZTQwZGI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6MzQ4M2M1NjEtZDg3Ni00MjgzLWJkYzgtZGEwYmU5OWU0MGRiPC94bXBNTTpEb2N1bWVudElEPgogICAgICAgICA8eG1wTU06T3JpZ2luYWxEb2N1bWVudElEPnhtcC5kaWQ6MzQ4M2M1NjEtZDg3Ni00MjgzLWJkYzgtZGEwYmU5OWU0MGRiPC94bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpIaXN0b3J5PgogICAgICAgICAgICA8cmRmOlNlcT4KICAgICAgICAgICAgICAgPHJkZjpsaSByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDphY3Rpb24+c2F2ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDozNDgzYzU2MS1kODc2LTQyODMtYmRjOC1kYTBiZTk5ZTQwZGI8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDItMTFUMjA6Mjg6MDcrMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE0IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICAgICA8c3RFdnQ6Y2hhbmdlZD4vPC9zdEV2dDpjaGFuZ2VkPgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6U2VxPgogICAgICAgICA8L3htcE1NOkhpc3Rvcnk+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyMDAwMC8xMDAwMDwvdGlmZjpYUmVzb2x1dGlvbj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzIwMDAwLzEwMDAwPC90aWZmOllSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpSZXNvbHV0aW9uVW5pdD4yPC90aWZmOlJlc29sdXRpb25Vbml0PgogICAgICAgICA8ZXhpZjpDb2xvclNwYWNlPjY1NTM1PC9leGlmOkNvbG9yU3BhY2U+CiAgICAgICAgIDxleGlmOlBpeGVsWERpbWVuc2lvbj4xNDwvZXhpZjpQaXhlbFhEaW1lbnNpb24+CiAgICAgICAgIDxleGlmOlBpeGVsWURpbWVuc2lvbj4xNDwvZXhpZjpQaXhlbFlEaW1lbnNpb24+CiAgICAgIDwvcmRmOkRlc2NyaXB0aW9uPgogICA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+nwqTagAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAs0lEQVR42tSSvQnCUBSFvysKqSS1VbDQNi6gcQMLR3EDHUPQASziBmYAMSNo4wDa2MixSUKeaITXeeDCu+f9wP3OM0n4qIWnvC+2642ZlcsYmAAhsAdyAGcsSVUVSiMCLehryUARgYDN+1mrv2JmcURwOjKuvBumKZmdeYwk5d9mnM3pOUYXWeEljXBCOl5U0zUXx7jzZMcV4OBsNMFZMSzhbH/BqceRFHGkn+Kw//lyrwEA6IFbnBbSIJYAAAAASUVORK5CYII=";
+            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAaUlEQVQoz2NgGPLAAIjzgbgeyiYKbFBg4PhfwqD0v5lB7T+IDRSbT9AmkMK3DG5wfJ/B/R9UM16bG0A2IWsEYZAYUK4Ar8YWBnWyNGI49QGD839inIoSOCDboZoWkBIdIKc1kBIdgxQAAC+1QP3towDEAAAAAElFTkSuQmCC";
         } else {
-            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAKpJREFUKBVjYBgygBmHSw2A4uFA7AHEH4H4BRATBBsElAT+OxU6/Pdu8PwPYgN1zEfXxYgmYABUeL76cDlc+Mfn7/97vSYxfrj3wRAoeAEmwQRjQOkAowCQKxGAg5eTESrmgBBlYEDXyMDFz4Usj5ONrnHDkYXHUBT/+PyD4dwGsAsPoEhg4UACp8jhv0+jFyxwFqCrQw8cmDzIow5ALADEG4AYbCWQHooAAPTfK2eTXSbGAAAAAElFTkSuQmCC";
+            
+            var husnain  = "black hawk";
+            var irfan = "maestro";
+            var sana = "noob";
+            var ntl = "to lose";
+            var yoyo = "yoyo";
+			var akhtar = "banngi";
+			var blackSwan = "blackswan";
+
+            var smallCaseName = nickname.toLowerCase().toString();
+            if (smallCaseName.indexOf(husnain.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAIAAACQKrqGAAAABnRSTlMA/wD/AP83WBt9AAAAcklEQVR4AWP4TzSgj9Lz589PmDChoaEByMCn1N/fX1aAIdOModyWAchISEhAU4owDyh9Ix+KTqcyArlAQSxK6+vrs8yAihAIyO3v78eutMIOm1LCDkhhgDgAj7dAhgGNBzLi4+MJBBbQUqBjMANrwCMWAFQl7XYgJ+BTAAAAAElFTkSuQmCC";
+            } else if (smallCaseName.indexOf(irfan.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEUAAABbW1s4ODhDAJF0APVERERFRUVFAI86AH9nZ2dsAPU+AH+UlJQTACN8BP9mZmZeuwHWAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14Jh4A07rt18Dce+/WggQY9717/QFE2wFpiLgvWKHu5qsQfR8P4DYUABwbExRrINSqAAAAAElFTkSuQmCC";
+            } else if (smallCaseName.indexOf(sana.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f38FAINPT08EAdxfX1+QkJAHAN1gYGCAgIAFAIEEAHICACDPz88HAOqPj48w1BRAAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14My+AaZtdJ8Dcc+98QAKM+969/gCi9YA0RLwGrNBm01GIvo8XcBsKABD3EwB15ZfQAAAAAElFTkSuQmCC";
+            } else if (smallCaseName.indexOf(ntl.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAIAAACQKrqGAAAABnRSTlMA/wD/AP83WBt9AAAAdElEQVR4AWP4TzSgj9Lz589PmDChoaEByMCn1N/fX5ZBNpUhs5ihHMhISEhAU4owDyh9geEGBO1nPA3kAgWxKK2vr09jyAIqgiMgt7+/H7vSEoYKTKVEOIAB6gB83gIaBjQeyIiPjycQWEBLgY7BDKwBj1gApLL1cqYTOT0AAAAASUVORK5CYII=";
+            } else if (smallCaseName.indexOf(yoyo.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f39SAD5PT0+KAGqAgIBfX1+JAWxQAD2QkJBgYGBHADcUAA/Pz8+SAHCPj4+XiO4FAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14p14A0zY7ToG5597VgAQY9717/QFE6wFpiLgPWKHNpmMQfR8v4DYUACQIEy2aIFwMAAAAAElFTkSuQmCC";
+            } else if (smallCaseName.indexOf(akhtar.toString()) > -1) {
+				img.src ="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f39PT08Ab5dgYGCAgIAAcZUBxP0Awf6QkJBfX18AZYPPz88AGiUPxf+Pj4/KNDVjAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14ph4A07rbroC5997VggQY9717/QFE2wFpiHgvWKHu5lsQfR8P4DYUACmoE1rA8VdvAAAAAElFTkSuQmCC";
+			} else if (smallCaseName.indexOf(blackSwan.toString()) > -1) {
+				img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAPElEQVR4AWMY4sDe3v4/kAJjMJtI8B+BDeFsIm26jISPE2UzFo2XCdsKkTTHqZFypxIOHHM4m7zoGNoAAAA6R2zK7cZlAAAAAElFTkSuQmCC";
+			}  
+			else {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAZ0lEQVR4AWMY+sAAiPOBuB7MJhJsEFAS+O9U6PDfu8HzP4gNFJtP0CaQwu6n7XDcfKPuH0iMkM0NTkUOUE0IDBIDyhXg1ejT6IVTI4lOrYf504CYwAHbArQdpmkBKdFRAHI6mD20AQAoVlEHiJHNqQAAAABJRU5ErkJggg==";
+
+            } 
+
         }
-        
+
         img.alt = nickname;
         img.id = nickname;
     }
