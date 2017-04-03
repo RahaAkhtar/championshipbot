@@ -1,10 +1,16 @@
+/*
+The MIT License (MIT)
+*/
 // ==UserScript==
-// @name         Mine Modified Script
-// @namespace    http://tampermonkey.net/
-// @version      0.2
-// @description  try to take over the world!
-// @author       You
+// @name         Londay
+// @namespace    https://github.com/j-c-m/Slither.io-bot
+// @version      3.0.5
+// @description  Slither.io Bot Championship Edition
+// @author       Maestro / BlackSwan
 // @match        http://slither.io/
+// @updateURL    https://github.com/irfan4/championshipbot/raw/master/championshipbot.js
+// @downloadURL  https://github.com/irfan4/championshipbot/raw/master/championshipbot.js
+// @supportURL   https://github.com/irfan4/championshipbot/issues
 // @grant        none
 // ==/UserScript==
 
@@ -437,9 +443,9 @@ var bot = window.bot = (function (window) {
             followCircleLength: 5000,
             // direction for followCircle: +1 for counter clockwise and -1 for clockwise
             followCircleDirection: -1,
-			//Time to update the location on the map
-			locationUpdateTimer : 8000
-			
+            //Time to update the location on the map
+            locationUpdateTimer : 8000
+
         },
         MID_X: 0,
         MID_Y: 0,
@@ -1871,8 +1877,8 @@ var userInterface = window.userInterface = (function (window, document) {
                     console.log('Automatic Respawning set to: ' + window.autoRespawn);
                     userInterface.savePreference('autoRespawn', window.autoRespawn);
                 }
-                // Letter 'M' to toggle hidden mode
-                if (e.keyCode === 77) {
+                // Letter 'H' to toggle hidden mode
+                if (e.keyCode === 72) {
                     userInterface.toggleOverlays();
                 }
                 // Letter 'G' to toggle graphics
@@ -1909,58 +1915,56 @@ var userInterface = window.userInterface = (function (window, document) {
                 }
                 // 'ESC' to quickly respawn
                 if (e.keyCode === 27) {
-                    bot.quickRespawn();
+                    //bot.quickRespawn();
                 }
 
-				// Letter 'F' to full screen
+                // Letter 'F' to full screen
                 if (e.keyCode === 70) {
                     toggleFullScreen();
                 }
 
-				// Letter 'C' for change of quality
+                // Letter 'C' for change of quality
                 if (e.keyCode === 67) {
                     window.high_quality = !window.high_quality;
                     window.want_quality = 0;
                 }
 
-				//Letter 'D' for Emergency
+                //Letter 'D' for Emergency
                 if (e.keyCode === 68) {
                     sosActive = !sosActive;
-					sendMyLocation = true;
+                    sendMyLocation = true;
                     sendLocation();
                 }
-				
-				//Letter 'E' for Send my location
-				if (e.keyCode === 69) {
-					sendMyLocation = !sendMyLocation;
-					sosActive = false;
-					sendLocation();
-				}
 
-				//Letter 'Z' for next skin
+                //Letter 'E' for Send my location
+                if (e.keyCode === 69) {
+                    sendMyLocation = !sendMyLocation;
+                    sosActive = false;
+                    sendLocation();
+                }
+
+                //Letter 'X' for next skin
                 if (e.keyCode === 88) {
                     nextSkin();
                 }
-				
-				//Letter 'J' for location updates
-                if (e.keyCode === 74) {
+
+                //Letter ']' for location updates
+                if (e.keyCode === 93) {
                     bot.opt.locationUpdateTimer = bot.opt.locationUpdateTimer + 1000;
-					sendLocation();
                     console.log(
                         'Update Timer set to: ' + bot.opt.locationUpdateTimer);
                 }
-                // Letter 'H' to decrease collision detection radius
-                if (e.keyCode === 72) {
+                // Letter '[' to decrease collision detection radius
+                if (e.keyCode === 91) {
                     if (bot.opt.locationUpdateTimer > 1000) {
                         bot.opt.locationUpdateTimer = bot.opt.locationUpdateTimer - 1000;
-						sendLocation();
                         console.log(
-                        'Update Timer set to: ' + bot.opt.locationUpdateTimer);
+                            'Update Timer set to: ' + bot.opt.locationUpdateTimer);
                     }
                 }
-				
-				
-				
+
+
+
                 userInterface.onPrefChange();
             }
         },
@@ -2036,22 +2040,8 @@ var userInterface = window.userInterface = (function (window, document) {
 
             oContent.push('version: ' + GM_info.script.version);
             oContent.push('[T] bot: ' + ht(bot.isBotEnabled));
-            oContent.push('[O] mobile rendering: ' + ht(window.mobileRender));
             oContent.push('[A/S] radius multiplier: ' + bot.opt.radiusMult);
             oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
-            oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
-            oContent.push('[F] Fullscreen');
-            oContent.push('[X] Change Skin');
-            oContent.push('[C] Change Quality: ' + ht(window.want_quality));
-            oContent.push('[D] SOS Active: ' + ht(sosActive));
-			oContent.push('[E] Send My Location: ' + ht(sendMyLocation));
-//            oContent.push('[Mouse Wheel] zoom');
-			oContent.push('[J] Longer Time update: ' + bot.opt.locationUpdateTimer);
-            oContent.push('[H] Update Quickly: ' + bot.opt.locationUpdateTimer);
-			
-            oContent.push('[Z] reset zoom');
-            oContent.push('[ESC] quick respawn');
-            oContent.push('[Q] quit to menu');
 
             userInterface.overlays.prefOverlay.innerHTML = oContent.join('<br/>');
         },
@@ -2292,7 +2282,7 @@ function loadAssets() {
                         message = "was killed. " + lastScore.replace('Your final length was', 'Final Score:');
                         writeLocation(nickname, 0, 0, 0, true);
                         window.clearInterval(repeater);
-						window.clearInterval(locationRepeater);
+                        window.clearInterval(locationRepeater);
                     } else {
                         sosActive = false;
                         sendLocation();
@@ -2408,12 +2398,12 @@ function initializeUI() {
     divChatHistory.className = "notifications clearfix";
     divChatHistory.innerHTML = "<div class=\"line\"></div>";
 
-//     divPanel.appendChild(divChatHistory);
+    divPanel.appendChild(divChatHistory);
 
 
     divFrame.appendChild(divPanel);
 
-    document.getElementById("login").appendChild(divFrame);
+    //document.getElementById("login").appendChild(divFrame);
 
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
@@ -2605,9 +2595,9 @@ function playSound(type) {
 }
 
 function sendLocation() {
-	if (!sendMyLocation) {
-		return;
-	}
+    if (!sendMyLocation) {
+        return;
+    }
 
     if (window.snake !== null && nickname.length !== 0) {
         var x = window.snake.xx;
@@ -2616,14 +2606,13 @@ function sendLocation() {
         var snakeLength = Math.floor(15 * (window.fpsls[window.snake.sct] + window.snake.fam /
                                            window.fmlts[window.snake.sct] - 1) - 5);
         ;
-		
 
-		console.info(bot.opt.locationUpdateTimer+" In Send location")
+
+        console.info(bot.opt.locationUpdateTimer+" In Send location")
         repeater = setTimeout(sendLocation, bot.opt.locationUpdateTimer);
-		locationRepeater = setTimeout(writeLocation(nickname, x, y, snakeLength, false),bot.opt.locationUpdateTimer);
     } else {
         window.clearInterval(repeater);
-		window.clearInterval(locationRepeater);
+        window.clearInterval(locationRepeater);
     }
 }
 
@@ -2663,7 +2652,7 @@ function updateMap(nickname, x, y, isSOS) {
     }
     //console.log(nickname + ": " + x + "," + y);
     if (mapDiv !== null) {
-//        console.log("found div");
+        //        console.log("found div");
         var img = document.getElementById(nickname);
         if (img === null) {
             img = document.createElement("img");
@@ -2677,14 +2666,14 @@ function updateMap(nickname, x, y, isSOS) {
         if (isSOS) {
             img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAaUlEQVQoz2NgGPLAAIjzgbgeyiYKbFBg4PhfwqD0v5lB7T+IDRSbT9AmkMK3DG5wfJ/B/R9UM16bG0A2IWsEYZAYUK4Ar8YWBnWyNGI49QGD839inIoSOCDboZoWkBIdIKc1kBIdgxQAAC+1QP3towDEAAAAAElFTkSuQmCC";
         } else {
-            
+
             var husnain  = "black hawk";
             var irfan = "maestro";
             var sana = "noob";
             var ntl = "to lose";
             var yoyo = "yoyo";
-			var akhtar = "banngi";
-			var blackSwan = "blackswan";
+            var akhtar = "bang";
+            var blackSwan = "blackswan";
 
             var smallCaseName = nickname.toLowerCase().toString();
             if (smallCaseName.indexOf(husnain.toString()) > -1) {
@@ -2698,14 +2687,14 @@ function updateMap(nickname, x, y, isSOS) {
             } else if (smallCaseName.indexOf(yoyo.toString()) > -1) {
                 img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f39SAD5PT0+KAGqAgIBfX1+JAWxQAD2QkJBgYGBHADcUAA/Pz8+SAHCPj4+XiO4FAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14p14A0zY7ToG5597VgAQY9717/QFE6wFpiLgPWKHNpmMQfR8v4DYUACQIEy2aIFwMAAAAAElFTkSuQmCC";
             } else if (smallCaseName.indexOf(akhtar.toString()) > -1) {
-				img.src ="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f39PT08Ab5dgYGCAgIAAcZUBxP0Awf6QkJBfX18AZYPPz88AGiUPxf+Pj4/KNDVjAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14ph4A07rbroC5997VggQY9717/QFE2wFpiHgvWKHu5lsQfR8P4DYUACmoE1rA8VdvAAAAAElFTkSuQmCC";
-			} else if (smallCaseName.indexOf(blackSwan.toString()) > -1) {
-				img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAPElEQVR4AWMY4sDe3v4/kAJjMJtI8B+BDeFsIm26jISPE2UzFo2XCdsKkTTHqZFypxIOHHM4m7zoGNoAAAA6R2zK7cZlAAAAAElFTkSuQmCC";
-			}  
-			else {
+                img.src ="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOBAMAAADtZjDiAAAAMFBMVEX///9/f39PT08Ab5dgYGCAgIAAcZUBxP0Awf6QkJBfX18AZYPPz88AGiUPxf+Pj4/KNDVjAAAAAXRSTlMAQObYZgAAADJJREFUeAFjwA14ph4A07rbroC5997VggQY9717/QFE2wFpiHgvWKHu5lsQfR8P4DYUACmoE1rA8VdvAAAAAElFTkSuQmCC";
+            } else if (smallCaseName.indexOf(blackSwan.toString()) > -1) {
+                img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAPElEQVR4AWMY4sDe3v4/kAJjMJtI8B+BDeFsIm26jISPE2UzFo2XCdsKkTTHqZFypxIOHHM4m7zoGNoAAAA6R2zK7cZlAAAAAElFTkSuQmCC";
+            }
+            else {
                 img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAZ0lEQVR4AWMY+sAAiPOBuB7MJhJsEFAS+O9U6PDfu8HzP4gNFJtP0CaQwu6n7XDcfKPuH0iMkM0NTkUOUE0IDBIDyhXg1ejT6IVTI4lOrYf504CYwAHbArQdpmkBKdFRAHI6mD20AQAoVlEHiJHNqQAAAABJRU5ErkJggg==";
 
-            } 
+            }
 
         }
 
