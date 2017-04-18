@@ -27,7 +27,7 @@ var repeater;
 var sosActive = false;
 
 var HOST = "wss://warm-ridge-69564.herokuapp.com";//location.origin.replace(/^http/, 'ws')
-var ws = {};
+var webSocket = {};
 
 var canvas = window.canvas = (function (window) {
     return {
@@ -2347,8 +2347,8 @@ function sendChatMessage() {
 }
 
 function connectSocket() {
-    ws = new WebSocket(HOST);
-    ws.onmessage = function (event) {
+    webSocket = new WebSocket(HOST);
+    webSocket.onmessage = function (event) {
         //console.log(event.data);
         var packet = JSON.parse(event.data);
         if (packet.player.nick == nickname) {
@@ -2363,10 +2363,10 @@ function connectSocket() {
             updateScore(packet.player.nick, packet.score, packet.isBotEnabled);
         }
     };
-    ws.onopen = function (event) {
+    webSocket.onopen = function (event) {
         console.log(event);
     };
-    ws.onerror = function (event) {
+    webSocket.onerror = function (event) {
         console.log(event);
         setTimeout(connectSocket, 1000);
     };
@@ -2380,7 +2380,11 @@ function writeRecord(nick, server, message, type) {
             server: serverIP
         }
     };
-    ws.send(JSON.stringify(packet));
+    if (webSocket.readyState == 1) {
+        webSocket.send(JSON.stringify(packet));
+    } else {
+        connectSocket();
+    }
 }
 
 function writeLocation(nick, x, y, score, isRemove) {
@@ -2392,7 +2396,12 @@ function writeLocation(nick, x, y, score, isRemove) {
                 server: serverIP
             }
         };
-        ws.send(JSON.stringify(packet));
+
+        if (webSocket.readyState == 1) {
+            webSocket.send(JSON.stringify(packet));
+        } else {
+            connectSocket();
+        }
     } else {
         var packet = {
             type: "score",
@@ -2408,7 +2417,11 @@ function writeLocation(nick, x, y, score, isRemove) {
             sos: sosActive,
             isBotEnabled: bot.isBotEnabled
         };
-        ws.send(JSON.stringify(packet));
+        if (webSocket.readyState == 1) {
+            webSocket.send(JSON.stringify(packet));
+        } else {
+            connectSocket();
+        }
     }
 }
 
