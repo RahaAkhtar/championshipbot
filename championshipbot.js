@@ -1,16 +1,20 @@
 /*
 The MIT License (MIT)
+ Copyright (c) 2016 Jesse Miller <jmiller@jmiller.com>
+ Copyright (c) 2016 Alexey Korepanov <kaikaikai@yandex.ru>
+ Copyright (c) 2016 Ermiya Eskandary & Théophile Cailliau and other contributors
+ https://jmiller.mit-license.org/
 */
 // ==UserScript==
-// @name         Slither.io Championship Edition
+// @name         Firebase Championship Edition
 // @namespace    https://github.com/j-c-m/Slither.io-bot
 // @version      3.0.5
 // @description  Slither.io Bot Championship Edition
-// @author       Maestro / BlackSwan / NTL
+// @author       Maestro
 // @match        http://slither.io/
-// @updateURL    https://github.com/irfan4/championshipbot/raw/master/championshipbot.js
-// @downloadURL  https://github.com/irfan4/championshipbot/raw/master/championshipbot.js
-// @supportURL   https://github.com/irfan4/championshipbot/issues
+// @updateURL    https://github.com/j-c-m/Slither.io-bot/raw/master/bot.user.js
+// @downloadURL  https://github.com/j-c-m/Slither.io-bot/raw/master/bot.user.js
+// @supportURL   https://github.com/j-c-m/Slither.io-bot/issues
 // @grant        none
 // ==/UserScript==
 
@@ -25,9 +29,71 @@ var nickname = "";
 var serverIP = "5.9.19.112:444";
 var repeater;
 var sosActive = false;
+var foodAvailable = false;
+var botAvailable = false;
+var eatMeActive = false;
+var lagActive = false;
+var highQuality = false;
+var readTimeInterval = 3;
 
-var HOST = "wss://warm-ridge-69564.herokuapp.com";//location.origin.replace(/^http/, 'ws')
-var webSocket = {};
+var friendColors = [
+    {
+        name: "maestro",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/yellow.png?alt=media&token=26e634ca-9a38-4b86-bca8-0b561bdd931a"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/purple.png?alt=media&token=e8e4c1d6-9958-447c-99be-79990f456dcf"
+    },
+    {
+        name: "hawk",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/pink.png?alt=media&token=6b933297-9baa-4915-83e6-9e0f5df89a58"
+    },
+    {
+        name: "ntl",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/navyblue.png?alt=media&token=27917c9a-752b-423a-b2ff-237e7567015c"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/lightyellow.png?alt=media&token=c05a25e6-8324-412e-aeab-b24e64576015"
+    },
+    {
+        name: "irina",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/grey.png?alt=media&token=94f79830-ebb2-4f55-9746-31d807654a49"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/darkpurple.png?alt=media&token=149c8439-9b08-419c-a0bc-162fd98819a2"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/darkpink.png?alt=media&token=45ff1b52-faaa-4b3d-afca-d17d782f2a39"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/darkgreen.png?alt=media&token=f8bfd66a-af23-4eb1-b06f-9938aabbc4fb"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/darkbrown.png?alt=media&token=81d235d0-4407-4e4a-ab67-e357a2cdc732"
+    },
+    {
+        name: "rha_akhtar",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/brown.png?alt=media&token=b0cdce56-be21-4cc5-8493-b1e47beadb03"
+    },
+    {
+        name: "seductive",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/blue.png?alt=media&token=dfea51b4-c1c1-4773-b129-f15a0b4bfe3e"
+    },
+    {
+        name: "",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/black.png?alt=media&token=746d6170-d9c1-40d2-81be-77be69d301d6"
+    },
+    {
+        name: "yoyo",
+        image: "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/aqua.png?alt=media&token=db3aa546-cbda-4c5a-b391-cc25c79a8638"
+    }
+]
 
 var canvas = window.canvas = (function (window) {
     return {
@@ -1927,8 +1993,14 @@ var userInterface = window.userInterface = (function (window, document) {
                     window.high_quality = !window.high_quality;
                 }
 
-                if (e.keyCode === 68) {
+                if (e.keyCode === 49) {
                     sosActive = !sosActive;
+                } else if (e.keyCode === 50) {
+                    foodAvailable = !foodAvailable;
+                } else if (e.keyCode === 51) {
+                    eatMeActive = !eatMeActive;
+                } else if (e.keyCode === 52) {
+                    lagActive = !lagActive;
                 }
 
                 if (e.keyCode === 88) {
@@ -2007,20 +2079,13 @@ var userInterface = window.userInterface = (function (window, document) {
             var oContent = [];
             var ht = userInterface.handleTextColor;
 
-            //oContent.push('version: ' + GM_info.script.version);
             oContent.push('[T] bot: ' + ht(bot.isBotEnabled));
-            //oContent.push('[O] mobile rendering: ' + ht(window.mobileRender));
-            //oContent.push('[A/S] radius multiplier: ' + bot.opt.radiusMult);
-            //oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
-            //oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
-            //oContent.push('[F] Fullscreen');
-            //oContent.push('[X] Change Skin');
-            //oContent.push('[C] Change Quality');
-            oContent.push('[D] SOS Active: ' + ht(sosActive));
-            //oContent.push('[Mouse Wheel] zoom');
-            //oContent.push('[Z] reset zoom');
-            //oContent.push('[ESC] quick respawn');
-            //oContent.push('[Q] quit to menu');
+            oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
+            oContent.push('[F] fullscreen');
+            oContent.push('[1] SOS active: ' + ht(sosActive));
+            oContent.push('[2] food available: ' + ht(foodAvailable));
+            oContent.push('[3] eat me: ' + ht(eatMeActive));
+            oContent.push('[4] lag active: ' + ht(lagActive));
 
             userInterface.overlays.prefOverlay.innerHTML = oContent.join('<br/>');
         },
@@ -2236,41 +2301,59 @@ function addCss(fileName) {
 }
 
 function loadAssets() {
-    connectSocket();
+    var js = document.createElement("script");
 
+    js.type = "text/javascript";
+    js.src = "https://www.gstatic.com/firebasejs/3.6.9/firebase.js";
+
+    document.body.appendChild(js);
     addCss('https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/style.css?alt=media&token=425d64e7-af05-4e79-87cd-5d969a172209')
-
+    bot.isTopHidden = true;
     initializeUI();
 
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutationRecord) {
-
-            var target = document.getElementById('login');
-            if (target.style.opacity == 1) {
-                isStatusWritten++;
-                if (isStatusWritten % 2 == 0) {
-                    var type = 1;
-                    var message = "respawned.";
-                    console.log(target.style.display);
-                    if (target.style.display === 'inline') {
-                        type = 2;
-                        var lastScore = window.document.getElementById('lastscore').innerText;
-                        message = "was killed. " + lastScore.replace('Your final length was', 'Final Score:');
-                        writeLocation(nickname, 0, 0, 0, true);
-                        window.clearInterval(repeater);
-                    } else {
-                        sosActive = false;
-                        sendLocation();
-                    }
-                }
-            }
-        });
-    });
-
-    var target = document.getElementById('login');
-    observer.observe(target, { attributes : true, attributeFilter : ['style'] });
+    setTimeout(loadChat, 1000);
 }
 var isStatusWritten = 0;
+
+function loadChat() {
+    var config = {
+        apiKey: "AIzaSyBAsJWzlpQEmGnz31c03d8WPtFFrEXoKvg",
+        authDomain: "latestdramay-94d61.firebaseapp.com",
+        databaseURL: "https://latestdramay-94d61.firebaseio.com",
+        storageBucket: "latestdramay-94d61.appspot.com",
+        messagingSenderId: "16345424584"
+    };
+    firebase.initializeApp(config);
+
+    // Get a reference to the database service
+    var database = firebase.database();
+    var messagesRef = firebase.database().ref('messages/');
+    var locationsRef = firebase.database().ref('location/');
+
+    messagesRef.on('child_added', function(data) {
+        var item = data.val();
+        appendChatItem(item.nick, item.message, item.timeStamp, item.server, item.type);
+    });
+
+    locationsRef.on('child_changed', function(data) {
+        var item = data.val();
+        if (item.nick != nickname) {
+            var isSOS = false;
+            if (item.sosActive) {
+                isSOS = true;
+            }
+            updateMap(item.nick, item.x, item.y, isSOS);
+            updateScore(item);
+        }
+    });
+
+    locationsRef.on('child_removed', function(data) {
+        removeFriendScore();
+
+    });
+
+    sendLocation();
+}
 
 function initializeUI() {
     var divFrame = document.createElement("div");
@@ -2316,12 +2399,12 @@ function initializeUI() {
 
     divFrame.appendChild(divPanel);
 
-    //document.getElementById("login").appendChild(divFrame);
+    document.getElementById("login").appendChild(divFrame);
 
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
 
-    //document.body.appendChild(divFloatingdivcontainer);
+    document.body.appendChild(divFloatingdivcontainer);
 
     var divFriendsLeaderboard = document.createElement("div");
     divFriendsLeaderboard.id = "friendsLeaderboard";
@@ -2346,83 +2429,96 @@ function sendChatMessage() {
     t.value = "";
 }
 
-function connectSocket() {
-    webSocket = new WebSocket(HOST);
-    webSocket.onmessage = function (event) {
-        //console.log(event.data);
-        var packet = JSON.parse(event.data);
-        if (packet.player.nick == nickname) {
-            return;
-        }
-        if (packet.type == "Online") {
-            console.log(packet.player.nick + " is now " + packet.type);
-        } else if (packet.type == "Offline") {
-            removeFriendScore(packet.player.nick);
-        } else if (packet.type == "score") {
-            updateMap(packet.player.nick, packet.location.x, packet.location.y, packet.sos);
-            updateScore(packet.player.nick, packet.score, packet.isBotEnabled);
-        }
-    };
-    webSocket.onopen = function (event) {
-        console.log(event);
-    };
-    webSocket.onerror = function (event) {
-        console.log(event);
-        setTimeout(connectSocket, 1000);
-    };
-}
-
 function writeRecord(nick, server, message, type) {
-    var packet = {
+    // A post entry.
+    var postData = {
+        nick: nick,
+        server: server,
+        message: message,
         type: type,
-        player: {
-            nick: nick,
-            server: serverIP
-        }
+        timeStamp: Date.now()
     };
-    if (webSocket.readyState == 1) {
-        webSocket.send(JSON.stringify(packet));
-    } else {
-        connectSocket();
-    }
+
+    // Get a key for a new Post.
+    var newPostKey = firebase.database().ref().child('messages').push().key;
+
+    // Write the new post's data simultaneously in the posts list and the user's post list.
+    var updates = {};
+    updates['/messages/' + newPostKey] = postData;
+
+    return firebase.database().ref().update(updates);
 }
 
 function writeLocation(nick, x, y, score, isRemove) {
-    if (isRemove) {
-        var packet = {
-            type: "Offline",
-            player: {
-                nick: nick,
-                server: serverIP
-            }
-        };
+    // A post entry.
+    var postData = {
+        nick: nick,
+        x: x,
+        y: y,
+        isBotEnabled: bot.isBotEnabled,
+        sosActive: sosActive,
+        score: score,
+        foodAvailable: foodAvailable,
+        eatMeActive: eatMeActive,
+        lagActive: lagActive,
+        highQuality: highQuality
+    };
 
-        if (webSocket.readyState == 1) {
-            webSocket.send(JSON.stringify(packet));
-        } else {
-            connectSocket();
-        }
+    // Get a key for a new Post.
+    var newPostKey = nick;
+
+    var updates = {};
+    if (isRemove) {
+        updates['/location/' + newPostKey] = null;
     } else {
-        var packet = {
-            type: "score",
-            player: {
-                nick: nick,
-                server: serverIP
-            },
-            location: {
-                x: x,
-                y: y
-            },
-            score: score,
-            sos: sosActive,
-            isBotEnabled: bot.isBotEnabled
-        };
-        if (webSocket.readyState == 1) {
-            webSocket.send(JSON.stringify(packet));
-        } else {
-            connectSocket();
-        }
+        updates['/location/' + newPostKey] = postData;
     }
+
+    return firebase.database().ref().update(updates);
+}
+
+function appendChatItem(name, message, timestamp, ip, type) {
+
+
+    var div = document.createElement("div");
+    div.className = "notification";
+
+    var circleDiv = document.createElement("div");
+    if (type === 1) {
+        circleDiv.className = "circle-green";
+    } else if (type === 2) {
+        circleDiv.className = "circle-red";
+    } else if (type === 3) {
+        circleDiv.className = "circle-blue";
+    }
+
+    div.appendChild(circleDiv);
+
+    var span = document.createElement("span");
+    span.className = "time";
+    var date = new Date(timestamp);
+    span.innerHTML = timeSince(date) + " - IP: " + ip;
+    div.appendChild(span);
+
+    var pTag = document.createElement("p");
+    if (type === 1) {
+        pTag.innerHTML = "<b>" + name + "</b> " + message;
+    } else if (type === 2) {
+        pTag.innerHTML = "<b>" + name + "</b> " + message;
+    } else if (type === 3) {
+        pTag.innerHTML = "<b>" + name + "</b>: " + message;
+    }
+
+    div.appendChild(pTag);
+    //div.innerHTML = "" + name + ": " + message + " (" + timestamp + ")";
+
+    document.getElementById("chat_history").appendChild(div);
+    document.getElementById("chat_history").scrollTop = document.getElementById("chat_history").scrollHeight
+
+    if (window.snake != null) {
+        showNotification(name +": " + message, type);
+    }
+
 }
 
 function timeSince(date) {
@@ -2453,6 +2549,18 @@ function timeSince(date) {
     return Math.floor(seconds) + " seconds";
 }
 
+function showNotification(message, type) {
+    var div = document.createElement("div");
+    div.className = "floatingdiv";
+    div.innerHTML = message;
+
+    var notificationContainer = document.getElementsByClassName("floatingdivcontainer");
+    if (notificationContainer.length > 0) {
+        notificationContainer[0].appendChild(div);
+        setTimeout(hideNotification, 5000);
+    }
+}
+
 function hideNotification() {
     var notifications = document.getElementsByClassName("floatingdiv");
 
@@ -2466,6 +2574,20 @@ function hideNotification() {
     }
 }
 
+function playSound(type) {
+    var audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Interfaces/Beeps/Fat_n_So-wwwbeat-8519/Fat_n_So-wwwbeat-8519_hifi.mp3";
+    if (type == 2) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Mayhem/Knife_Sword/Knife_SL-Derka_De-8768/Knife_SL-Derka_De-8768_hifi.mp3";
+    } else if (type == 3) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/Interfaces/Clicks/Button_C-J_Fairba-8446/Button_C-J_Fairba-8446_hifi.mp3";
+    } else if (type == 4) {
+        audioURL = "http://www.flashkit.com/imagesvr_ce/flashkit/soundfx/People/Applause/Dull_Cla-Public_D-11/Dull_Cla-Public_D-11_hifi.mp3";
+    }
+
+    var audio = new Audio(audioURL);
+    audio.play();
+}
+
 function sendLocation() {
     if (window.snake != null && nickname.length != 0) {
         var x = window.snake.xx;
@@ -2475,17 +2597,16 @@ function sendLocation() {
                                            window.fmlts[window.snake.sct] - 1) - 5);
 
         writeLocation(nickname, x, y, snakeLength, false);
-
-        repeater = setTimeout(sendLocation, 2000);
     } else {
+        skinIndex--;
         writeLocation(nickname, x, y, snakeLength, true);
-        window.clearInterval(repeater);
     }
+    repeater = setTimeout(sendLocation, readTimeInterval * 1000);
 }
 
 var mapDiv = null;
 
-function removeFriendScore(nick) {
+function removeFriendScore() {
     if (mapDiv == null) {
         var nsidivs = document.getElementsByClassName("nsi");
         for (var i = 0; i < nsidivs.length; i++) {
@@ -2496,45 +2617,70 @@ function removeFriendScore(nick) {
         }
     }
 
-    var img = document.getElementById(nick);
-    if (img != null && mapDiv != null) {
-        mapDiv.removeChild(img);
+    if (mapDiv != null) {
+        var descendents = mapDiv.getElementsByTagName('img');
+        for (i = 0; i < descendents.length; ++i) {
+            var e = descendents[i];
+            if (e.hasAttribute("id")) {
+                mapDiv.removeChild(e);
+            }
+        }
     }
 
-    var _scoreNameDiv = document.getElementById("score_name_" + nick);
-    var _scoreDiv =  document.getElementById("score_" + nick);
     var friendsLeaderboard = document.getElementById('friendsLeaderboard');
+    while (friendsLeaderboard.firstChild) {
+        friendsLeaderboard.removeChild(friendsLeaderboard.firstChild);
+    }
 
-    if (_scoreDiv != null) {
-        friendsLeaderboard.removeChild(_scoreDiv);
-    }
-    if (_scoreNameDiv != null) {
-        friendsLeaderboard.removeChild(_scoreNameDiv);
-    }
 }
 
-function updateScore(nick, score, isBotEnabled) {
-
+function updateScore(friend) {
     var friendsLeaderboard = document.getElementById('friendsLeaderboard');
-    var _scoreNameDiv = document.getElementById("score_name_" + nick);
-    var _scoreDiv =  document.getElementById("score_" + nick);
+    var _scoreNameDiv = document.getElementById("score_name_" + friend.nick);
+    var _scoreDiv = document.getElementById("score_" + friend.nick);
 
     if (_scoreDiv == null) {
         _scoreDiv = document.createElement("div");
         _scoreDiv.className = "scoreDiv";
-        _scoreDiv.id = "score_" + nick;
+        _scoreDiv.id = "score_" + friend.nick;
         friendsLeaderboard.appendChild(_scoreDiv);
+    }
+    var cssName = "scoreNameDiv";
+    var additions = "";
+    if (friend.isBotEnabled) {
+        additions = additions + "BOT ";
+        cssName = "scorenameDivBot";
+    }
+
+    if (friend.eatMeActive) {
+        additions = additions + "EATME ";
+        cssName = "scoreNameDivEATME";
+    }
+
+    if (friend.foodAvailable) {
+        additions = additions + "FOOD ";
+        cssName = "scoreNameDivFood";
+    }
+
+    if (friend.sosActive) {
+        additions = additions + "SOS ";
+        cssName = "scoreNameDivSOS";
+    }
+
+    if (friend.lagActive) {
+        additions = additions + "LAG :/ ";
+        cssName = "scoreNameDivSOS";
     }
 
     if (_scoreNameDiv == null) {
         _scoreNameDiv = document.createElement("div");
-        _scoreNameDiv.className = "scoreNameDiv";
-        _scoreNameDiv.id = "score_name_" + nick;
+        _scoreNameDiv.className = cssName;
+        _scoreNameDiv.id = "score_name_" + friend.nick;
         friendsLeaderboard.appendChild(_scoreNameDiv);
     }
 
-    _scoreDiv.innerHTML = score;
-    _scoreNameDiv.innerHTML = nick + (isBotEnabled ? " (BOT)": "");
+    _scoreDiv.innerHTML = friend.score;
+    _scoreNameDiv.innerHTML = friend.nick + ": " + additions;
 }
 function updateMap(nickname, x, y, isSOS) {
     if (mapDiv == null) {
@@ -2559,13 +2705,21 @@ function updateMap(nickname, x, y, isSOS) {
         img.style.top = y / 476.1;
         img.style.opacity = 1;
         img.style.zIndex = 13;
+        img.id = nickname;
+
         if (isSOS) {
-            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAAsTAAALEwEAmpwYAAA4WWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS41LWMwMjEgNzkuMTU1NzcyLCAyMDE0LzAxLzEzLTE5OjQ0OjAwICAgICAgICAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgICAgICAgICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIj4KICAgICAgICAgPHhtcDpDcmVhdGVEYXRlPjIwMTctMDItMTFUMjA6MjY6NTQrMDQ6MDA8L3htcDpDcmVhdGVEYXRlPgogICAgICAgICA8eG1wOk1vZGlmeURhdGU+MjAxNy0wMi0xMVQyMDoyODowNyswNDowMDwveG1wOk1vZGlmeURhdGU+CiAgICAgICAgIDx4bXA6TWV0YWRhdGFEYXRlPjIwMTctMDItMTFUMjA6Mjg6MDcrMDQ6MDA8L3htcDpNZXRhZGF0YURhdGU+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCk8L3htcDpDcmVhdG9yVG9vbD4KICAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9wbmc8L2RjOmZvcm1hdD4KICAgICAgICAgPHBob3Rvc2hvcDpDb2xvck1vZGU+MzwvcGhvdG9zaG9wOkNvbG9yTW9kZT4KICAgICAgICAgPHhtcE1NOkluc3RhbmNlSUQ+eG1wLmlpZDozNDgzYzU2MS1kODc2LTQyODMtYmRjOC1kYTBiZTk5ZTQwZGI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6MzQ4M2M1NjEtZDg3Ni00MjgzLWJkYzgtZGEwYmU5OWU0MGRiPC94bXBNTTpEb2N1bWVudElEPgogICAgICAgICA8eG1wTU06T3JpZ2luYWxEb2N1bWVudElEPnhtcC5kaWQ6MzQ4M2M1NjEtZDg3Ni00MjgzLWJkYzgtZGEwYmU5OWU0MGRiPC94bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpIaXN0b3J5PgogICAgICAgICAgICA8cmRmOlNlcT4KICAgICAgICAgICAgICAgPHJkZjpsaSByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDphY3Rpb24+c2F2ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDozNDgzYzU2MS1kODc2LTQyODMtYmRjOC1kYTBiZTk5ZTQwZGI8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTctMDItMTFUMjA6Mjg6MDcrMDQ6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE0IChNYWNpbnRvc2gpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICAgICA8c3RFdnQ6Y2hhbmdlZD4vPC9zdEV2dDpjaGFuZ2VkPgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6U2VxPgogICAgICAgICA8L3htcE1NOkhpc3Rvcnk+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyMDAwMC8xMDAwMDwvdGlmZjpYUmVzb2x1dGlvbj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzIwMDAwLzEwMDAwPC90aWZmOllSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpSZXNvbHV0aW9uVW5pdD4yPC90aWZmOlJlc29sdXRpb25Vbml0PgogICAgICAgICA8ZXhpZjpDb2xvclNwYWNlPjY1NTM1PC9leGlmOkNvbG9yU3BhY2U+CiAgICAgICAgIDxleGlmOlBpeGVsWERpbWVuc2lvbj4xNDwvZXhpZjpQaXhlbFhEaW1lbnNpb24+CiAgICAgICAgIDxleGlmOlBpeGVsWURpbWVuc2lvbj4xNDwvZXhpZjpQaXhlbFlEaW1lbnNpb24+CiAgICAgIDwvcmRmOkRlc2NyaXB0aW9uPgogICA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+nwqTagAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAs0lEQVR42tSSvQnCUBSFvysKqSS1VbDQNi6gcQMLR3EDHUPQASziBmYAMSNo4wDa2MixSUKeaITXeeDCu+f9wP3OM0n4qIWnvC+2642ZlcsYmAAhsAdyAGcsSVUVSiMCLehryUARgYDN+1mrv2JmcURwOjKuvBumKZmdeYwk5d9mnM3pOUYXWeEljXBCOl5U0zUXx7jzZMcV4OBsNMFZMSzhbH/BqceRFHGkn+Kw//lyrwEA6IFbnBbSIJYAAAAASUVORK5CYII=";
+            img.src = "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/red.png?alt=media&token=cfa9f888-205b-43ed-a117-9f56c9700a61";
         } else {
-            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAAKpJREFUKBVjYBgygBmHSw2A4uFA7AHEH4H4BRATBBsElAT+OxU6/Pdu8PwPYgN1zEfXxYgmYABUeL76cDlc+Mfn7/97vSYxfrj3wRAoeAEmwQRjQOkAowCQKxGAg5eTESrmgBBlYEDXyMDFz4Usj5ONrnHDkYXHUBT/+PyD4dwGsAsPoEhg4UACp8jhv0+jFyxwFqCrQw8cmDzIow5ALADEG4AYbCWQHooAAPTfK2eTXSbGAAAAAElFTkSuQmCC";
+            for (let i = 0; i < friendColors.length; i++) {
+                var friend = friendColors[i];
+                if (friend.name.length > 0 && nickname.toLowerCase().indexOf(friend.name) > -1) {
+                    img.src = friend.image;
+                    return;
+                }
+            }
+
+            img.src = "https://firebasestorage.googleapis.com/v0/b/latestdramay-94d61.appspot.com/o/green.png?alt=media&token=001ea9af-5821-402a-9b01-0afcb1d64a96";
         }
 
-        img.alt = nickname;
-        img.id = nickname;
     }
 }
