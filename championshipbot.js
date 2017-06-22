@@ -2431,8 +2431,8 @@ function writeLocation(nick, x, y, score, isRemove) {
     // A post entry.
     var packet = {
         nickname: nick,
-        x: x,
-        y: y,
+        locationX: x,
+        locationY: y,
         isBotEnabled: bot.isBotEnabled,
         sosActive: sosActive,
         score: score,
