@@ -6,7 +6,7 @@ The MIT License (MIT)
  https://jmiller.mit-license.org/
 */
 // ==UserScript==
-// @name         Firebase Championship Edition
+// @name         Maestro Edition
 // @namespace    https://github.com/j-c-m/Slither.io-bot
 // @version      3.0.5
 // @description  Slither.io Bot Championship Edition
@@ -35,6 +35,7 @@ var eatMeActive = false;
 var lagActive = false;
 var highQuality = false;
 var readTimeInterval = 3;
+var BASE_URL = "http://dev.talktohipo.com/sf/api/values";
 
 var friendColors = [
     {
@@ -1789,7 +1790,7 @@ var userInterface = window.userInterface = (function (window, document) {
             statsOverlay.style.padding = '5px';
             statsOverlay.style.borderRadius = '5px';
             statsOverlay.className = 'nsi';
-            document.body.appendChild(statsOverlay);
+            //document.body.appendChild(statsOverlay);
 
             userInterface.overlays.botOverlay = botOverlay;
             userInterface.overlays.serverOverlay = serverOverlay;
@@ -1869,9 +1870,15 @@ var userInterface = window.userInterface = (function (window, document) {
 
         // Saves username when you click on "Play" button
         playButtonClickListener: function () {
+            sosActive = false;
+            foodAvailable = false;
+            eatMeActive = false;
+            lagActive = false;
+
             userInterface.saveNick();
             userInterface.loadPreference('autoRespawn', false);
             userInterface.onPrefChange();
+
 
             if (userInterface.server.value) {
                 let s = userInterface.server.value.split(':');
@@ -2102,6 +2109,7 @@ var userInterface = window.userInterface = (function (window, document) {
                               (Math.round(window.snake.xx) || 0) + ' y: ' +
                               (Math.round(window.snake.yy) || 0));
 
+                /*
                 if (window.goalCoordinates) {
                     oContent.push('target');
                     oContent.push('x: ' + window.goalCoordinates.x + ' y: ' +
@@ -2110,9 +2118,11 @@ var userInterface = window.userInterface = (function (window, document) {
                         oContent.push('sz: ' + window.goalCoordinates.sz);
                     }
                 }
+                */
 
                 userInterface.overlays.botOverlay.innerHTML = oContent.join('<br/>');
 
+                /*
                 if (userInterface.gfxOverlay) {
                     let gContent = [];
 
@@ -2122,6 +2132,7 @@ var userInterface = window.userInterface = (function (window, document) {
 
                     userInterface.gfxOverlay.innerHTML = gContent.join('<br/>');
                 }
+                */
 
                 if (window.bso !== undefined && userInterface.overlays.serverOverlay.innerHTML !==
                     window.bso.ip + ':' + window.bso.po) {
@@ -2281,6 +2292,9 @@ function toggleFullScreen() {
 
 var skinIndex = 0;
 function nextSkin() {
+    if (skinIndex < 0) {
+        skinIndex = 0;
+    }
     skinIndex++;
     if (skinIndex === 59) {
         skinIndex = 0;
@@ -2316,42 +2330,6 @@ function loadAssets() {
 var isStatusWritten = 0;
 
 function loadChat() {
-    var config = {
-        apiKey: "AIzaSyBAsJWzlpQEmGnz31c03d8WPtFFrEXoKvg",
-        authDomain: "latestdramay-94d61.firebaseapp.com",
-        databaseURL: "https://latestdramay-94d61.firebaseio.com",
-        storageBucket: "latestdramay-94d61.appspot.com",
-        messagingSenderId: "16345424584"
-    };
-    firebase.initializeApp(config);
-
-    // Get a reference to the database service
-    var database = firebase.database();
-    var messagesRef = firebase.database().ref('messages/');
-    var locationsRef = firebase.database().ref('location/');
-
-    messagesRef.on('child_added', function(data) {
-        var item = data.val();
-        appendChatItem(item.nick, item.message, item.timeStamp, item.server, item.type);
-    });
-
-    locationsRef.on('child_changed', function(data) {
-        var item = data.val();
-        if (item.nick != nickname) {
-            var isSOS = false;
-            if (item.sosActive) {
-                isSOS = true;
-            }
-            updateMap(item.nick, item.x, item.y, isSOS);
-            updateScore(item);
-        }
-    });
-
-    locationsRef.on('child_removed', function(data) {
-        removeFriendScore();
-
-    });
-
     sendLocation();
 }
 
@@ -2399,7 +2377,7 @@ function initializeUI() {
 
     divFrame.appendChild(divPanel);
 
-    document.getElementById("login").appendChild(divFrame);
+    //document.getElementById("login").appendChild(divFrame);
 
     var divFloatingdivcontainer = document.createElement("div");
     divFloatingdivcontainer.className = "floatingdivcontainer";
@@ -2451,8 +2429,8 @@ function writeRecord(nick, server, message, type) {
 
 function writeLocation(nick, x, y, score, isRemove) {
     // A post entry.
-    var postData = {
-        nick: nick,
+    var packet = {
+        nickname: nick,
         x: x,
         y: y,
         isBotEnabled: bot.isBotEnabled,
@@ -2460,21 +2438,42 @@ function writeLocation(nick, x, y, score, isRemove) {
         score: score,
         foodAvailable: foodAvailable,
         eatMeActive: eatMeActive,
-        lagActive: lagActive,
-        highQuality: highQuality
+        lagActive: lagActive
     };
+    submitScore(packet);
+    getFriendList();
+}
 
-    // Get a key for a new Post.
-    var newPostKey = nick;
+function submitScore(packet) {
+    var method = 'POST';
+    var xhr = createCORSRequest(method, BASE_URL);
+    xhr.setRequestHeader("content-type", "application/json");
+    xhr.addEventListener("readystatechange", function () {
+        if (this.readyState === 4) {}
+    });
 
-    var updates = {};
-    if (isRemove) {
-        updates['/location/' + newPostKey] = null;
-    } else {
-        updates['/location/' + newPostKey] = postData;
-    }
+    xhr.send(JSON.stringify(packet));
+}
 
-    return firebase.database().ref().update(updates);
+function getFriendList() {
+    var method = 'GET';
+    var xhr = createCORSRequest(method, BASE_URL);
+
+    xhr.addEventListener("readystatechange", function () {
+        if (this.readyState === 4) {
+            //console.log(this.responseText);
+            var friends = JSON.parse(this.responseText);
+            removeFriendScore();
+            friends.forEach(function (friend) {
+                if (friend.Nickname !== nickname) {
+                    updateMap(friend.Nickname, friend.LocationX, friend.LocationY, friend.SOSActive);
+                    updateScore(friend);
+                }
+            });
+        }
+    });
+
+    xhr.send();
 }
 
 function appendChatItem(name, message, timestamp, ip, type) {
@@ -2636,38 +2635,38 @@ function removeFriendScore() {
 
 function updateScore(friend) {
     var friendsLeaderboard = document.getElementById('friendsLeaderboard');
-    var _scoreNameDiv = document.getElementById("score_name_" + friend.nick);
-    var _scoreDiv = document.getElementById("score_" + friend.nick);
+    var _scoreNameDiv = document.getElementById("score_name_" + friend.Nickname);
+    var _scoreDiv = document.getElementById("score_" + friend.Nickname);
 
     if (_scoreDiv == null) {
         _scoreDiv = document.createElement("div");
         _scoreDiv.className = "scoreDiv";
-        _scoreDiv.id = "score_" + friend.nick;
+        _scoreDiv.id = "score_" + friend.Nickname;
         friendsLeaderboard.appendChild(_scoreDiv);
     }
     var cssName = "scoreNameDiv";
     var additions = "";
-    if (friend.isBotEnabled) {
+    if (friend.IsBotEnabled) {
         additions = additions + "BOT ";
         cssName = "scorenameDivBot";
     }
 
-    if (friend.eatMeActive) {
+    if (friend.EatMeActive) {
         additions = additions + "EATME ";
         cssName = "scoreNameDivEATME";
     }
 
-    if (friend.foodAvailable) {
+    if (friend.FoodAvailable) {
         additions = additions + "FOOD ";
         cssName = "scoreNameDivFood";
     }
 
-    if (friend.sosActive) {
+    if (friend.SOSActive) {
         additions = additions + "SOS ";
         cssName = "scoreNameDivSOS";
     }
 
-    if (friend.lagActive) {
+    if (friend.LagActive) {
         additions = additions + "LAG :/ ";
         cssName = "scoreNameDivSOS";
     }
@@ -2675,12 +2674,12 @@ function updateScore(friend) {
     if (_scoreNameDiv == null) {
         _scoreNameDiv = document.createElement("div");
         _scoreNameDiv.className = cssName;
-        _scoreNameDiv.id = "score_name_" + friend.nick;
+        _scoreNameDiv.id = "score_name_" + friend.Nickname;
         friendsLeaderboard.appendChild(_scoreNameDiv);
     }
 
-    _scoreDiv.innerHTML = friend.score;
-    _scoreNameDiv.innerHTML = friend.nick + ": " + additions;
+    _scoreDiv.innerHTML = friend.Score;
+    _scoreNameDiv.innerHTML = friend.Nickname + ": " + additions;
 }
 function updateMap(nickname, x, y, isSOS) {
     if (mapDiv == null) {
@@ -2692,7 +2691,7 @@ function updateMap(nickname, x, y, isSOS) {
             }
         }
     }
-    //console.log(nickname + ": " + x + "," + y);
+    console.log(nickname + ": " + x + "," + y);
     if (mapDiv !== null) {
         var img = document.getElementById(nickname);
         if (img == null) {
@@ -2701,8 +2700,8 @@ function updateMap(nickname, x, y, isSOS) {
         }
 
         img.style.position = "absolute";
-        img.style.left = x / 476.1;
-        img.style.top = y / 476.1;
+        img.style.left = x / 534.125;
+        img.style.top = y / 534.125;
         img.style.opacity = 1;
         img.style.zIndex = 13;
         img.id = nickname;
@@ -2723,3 +2722,19 @@ function updateMap(nickname, x, y, isSOS) {
 
     }
 }
+
+var createCORSRequest = function (method, url) {
+    var xhr = new XMLHttpRequest();
+    if ("withCredentials" in xhr) {
+        // Most browsers.
+        xhr.open(method, url, true);
+    } else if (typeof XDomainRequest != "undefined") {
+        // IE8 & IE9
+        xhr = new XDomainRequest();
+        xhr.open(method, url);
+    } else {
+        // CORS not supported.
+        xhr = null;
+    }
+    return xhr;
+};
