@@ -2700,8 +2700,8 @@ function updateMap(nickname, x, y, isSOS) {
         }
 
         img.style.position = "absolute";
-        img.style.left = x / 534.125;
-        img.style.top = y / 534.125;
+        img.style.left = Math.round(52 + 40 * (x - grd) / grd - 7) + "px";//x / 476.1;
+        img.style.top = Math.round(52 + 40 * (y - grd) / grd - 7) + "px";//y / 476.1;
         img.style.opacity = 1;
         img.style.zIndex = 13;
         img.id = nickname;
